@@ -14,20 +14,24 @@ type initialCollector struct {
 	logger     log.Logger
 }
 
+type CollectorConfiguration struct {
+	PostgresConnectionString string
+}
+
 const namespace = "patroni"
 
 var (
-	factories = make(map[string]func(client client.PatroniClient, logger log.Logger) prometheus.Collector)
+	factories = make(map[string]func(client client.PatroniClient, CollectorConfiguration, logger log.Logger) prometheus.Collector)
 )
 
-func registerCollector(collector string, factory func(client client.PatroniClient, logger log.Logger) prometheus.Collector) {
+func registerCollector(collector string, factory func(client client.PatroniClient, config CollectorConfiguration, logger log.Logger) prometheus.Collector) {
 	factories[collector] = factory
 }
 
-func NewPatroniCollector(client client.PatroniClient, logger log.Logger) prometheus.Collector {
+func NewPatroniCollector(client client.PatroniClient, config CollectorConfiguration, logger log.Logger) prometheus.Collector {
 	var collectors []prometheus.Collector
 	for key, factory := range factories {
-		collector := factory(client, log.With(logger, "collector", key))
+		collector := factory(client, config, log.With(logger, "collector", key))
 		collectors = append(collectors, collector)
 	}
 	return &initialCollector{

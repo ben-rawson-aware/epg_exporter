@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	registerCollector("patroni", createPatroniCollectorFactory)
+	registerCollector("postgres", createPatroniCollectorFactory)
 }
 
 var (
@@ -21,19 +21,20 @@ var (
 	possiblePatroniRole  = [...]string{"MASTER", "REPLICA", "STANDBY_LEADER"}
 )
 
-type patroniCollector struct {
+type postgresCollector struct {
 	stateDesc  *prometheus.Desc
 	roleDesc   *prometheus.Desc
 	staticDesc *prometheus.Desc
 	logger     log.Logger
 	client     client.PatroniClient
+	connectionString string
 }
 
-func createPatroniCollectorFactory(client client.PatroniClient, _ CollectorConfiguration, logger log.Logger) prometheus.Collector {
+func createPostgresCollectorFactory(client client.PatroniClient, config CollectorConfiguration, logger log.Logger) prometheus.Collector {
 	stateDesc := prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "cluster_node", "state"),
-		"The current state of Patroni service",
-		[]string{"state", "scope"},
+		prometheus.BuildFQName(namespace, "vacuum_count", "state"),
+		"The current vacuum count",
+		[]string{"state", "host"},
 		nil)
 	roleDesc := prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "cluster_node", "role"),
@@ -51,6 +52,7 @@ func createPatroniCollectorFactory(client client.PatroniClient, _ CollectorConfi
 		staticDesc: staticDesc,
 		logger:     logger,
 		client:     client,
+		connectionString: config.PostgresConnectionString,
 	}
 }
 
@@ -60,6 +62,8 @@ func (p *patroniCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (p *patroniCollector) Collect(ch chan<- prometheus.Metric) {
+	// use psql library to run queries
+	// pump results to channel
 	patroniResponse, err := p.client.GetMetrics()
 	if err != nil {
 		level.Error(p.logger).Log("msg", "Unable to get metrics from Patroni", "err", fmt.Sprintf("errornya: %v", err))
