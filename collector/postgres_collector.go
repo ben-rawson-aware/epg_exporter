@@ -2,10 +2,12 @@ package collector
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+
+	"database/sql"
+
+	_ "github.com/lib/pq"
 
 	"github.com/gopaytech/patroni_exporter/client"
 
@@ -22,11 +24,11 @@ var (
 )
 
 type postgresCollector struct {
-	stateDesc  *prometheus.Desc
-	roleDesc   *prometheus.Desc
-	staticDesc *prometheus.Desc
-	logger     log.Logger
-	client     client.PatroniClient
+	stateDesc        *prometheus.Desc
+	roleDesc         *prometheus.Desc
+	staticDesc       *prometheus.Desc
+	logger           log.Logger
+	client           client.PatroniClient
 	connectionString string
 }
 
@@ -47,11 +49,11 @@ func createPostgresCollectorFactory(client client.PatroniClient, config Collecto
 		[]string{"version"},
 		nil)
 	return &patroniCollector{
-		stateDesc:  stateDesc,
-		roleDesc:   roleDesc,
-		staticDesc: staticDesc,
-		logger:     logger,
-		client:     client,
+		stateDesc:        stateDesc,
+		roleDesc:         roleDesc,
+		staticDesc:       staticDesc,
+		logger:           logger,
+		client:           client,
 		connectionString: config.PostgresConnectionString,
 	}
 }
@@ -61,28 +63,35 @@ func (p *patroniCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- p.roleDesc
 }
 
+const (
+	// Initialize connection constants.
+	HOST     = "test-host"
+	DATABASE = "test-db"
+	USER     = "test-user"
+	PASSWORD = "test-creds"
+)
+
 func (p *patroniCollector) Collect(ch chan<- prometheus.Metric) {
 	// use psql library to run queries
 	// pump results to channel
-	patroniResponse, err := p.client.GetMetrics()
-	if err != nil {
-		level.Error(p.logger).Log("msg", "Unable to get metrics from Patroni", "err", fmt.Sprintf("errornya: %v", err))
-		return
-	}
-	for _, possibleState := range possiblePatroniState {
-		stateValue := 0.0
-		if strings.ToUpper(patroniResponse.State) == possibleState {
-			stateValue = 1.0
-		}
-		ch <- prometheus.MustNewConstMetric(p.stateDesc, prometheus.GaugeValue, stateValue, possibleState, patroniResponse.Patroni.Scope)
-	}
 
-	for _, possibleRole := range possiblePatroniRole {
-		stateValue := 0.0
-		if strings.ToUpper(patroniResponse.Role) == possibleRole {
-			stateValue = 1.0
-		}
-		ch <- prometheus.MustNewConstMetric(p.roleDesc, prometheus.GaugeValue, stateValue, possibleRole, patroniResponse.Patroni.Scope)
-	}
-	ch <- prometheus.MustNewConstMetric(p.staticDesc, prometheus.GaugeValue, 1.0, patroniResponse.Patroni.Version)
+	// connection string
+	var connectionString string = fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=require", HOST, USER, PASSWORD, DATABASE)
+
+	// connection
+	db, err := sql.Open("postgres", connectionString)
+	checkError(err)
+
+	err = db.Ping()
+	checkError(err)
+	fmt.Println("Successfully created connection to database")
+
+	/* query
+
+	sql_statement := "SELECT * from ;"
+	rows, err := db.Query(sql_statement)
+	checkError(err)
+	defer rows.Close()
+
+	*/
 }
