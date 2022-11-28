@@ -23,6 +23,7 @@ var (
 	possiblePatroniRole  = [...]string{"MASTER", "REPLICA", "STANDBY_LEADER"}
 )
 
+// anything need changed here re: connection string? 
 type postgresCollector struct {
 	stateDesc        *prometheus.Desc
 	roleDesc         *prometheus.Desc
@@ -32,6 +33,7 @@ type postgresCollector struct {
 	connectionString string
 }
 
+// these is creating the descriptions for the metrics? the return of `config.PostgresConnectionString`
 func createPostgresCollectorFactory(client client.PatroniClient, config CollectorConfiguration, logger log.Logger) prometheus.Collector {
 	stateDesc := prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "vacuum_count", "state"),
@@ -58,18 +60,26 @@ func createPostgresCollectorFactory(client client.PatroniClient, config Collecto
 	}
 }
 
+	// how do I use?
 func (p *patroniCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- p.stateDesc
 	ch <- p.roleDesc
 }
 
+// where should go this go, client?
 const (
-	// Initialize connection constants.
+	// Initialize connectionString constants
 	HOST     = "test-host"
 	DATABASE = "test-db"
 	USER     = "test-user"
 	PASSWORD = "test-creds"
 )
+
+
+func CheckError(err error) {
+	if err != nil {
+		panic(err)
+}
 
 func (p *patroniCollector) Collect(ch chan<- prometheus.Metric) {
 	// use psql library to run queries
@@ -78,20 +88,21 @@ func (p *patroniCollector) Collect(ch chan<- prometheus.Metric) {
 	// connection string
 	var connectionString string = fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=require", HOST, USER, PASSWORD, DATABASE)
 
-	// connection
+	// connection attempt
 	db, err := sql.Open("postgres", connectionString)
-	checkError(err)
+	CheckError(err)
 
+	// success check with ping
 	err = db.Ping()
-	checkError(err)
+	CheckError(err)
 	fmt.Println("Successfully created connection to database")
 
-	/* query
-
-	sql_statement := "SELECT * from ;"
+	// huge query for checkpointlength
+	checkpointLength := "SELECT total_checkpoints, seconds_since_start / total_checkpoints / 60 AS minutes_between_checkpoints FROM (SELECT EXTRACT(EPOCH FROM (now() - pg_postmaster_start_time())) AS seconds_since_start,(checkpoints_timed+checkpoints_req) AS total_checkpoints FROM pg_stat_bgwriter) AS sub; SELECT * FROM pg_control_checkpoint();"
 	rows, err := db.Query(sql_statement)
 	checkError(err)
 	defer rows.Close()
-
-	*/
+	}  //ch <- prometheus.MustNewConstMetric
 }
+
+
