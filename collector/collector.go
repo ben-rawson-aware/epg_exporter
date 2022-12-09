@@ -14,8 +14,13 @@ type initialCollector struct {
 	logger     log.Logger
 }
 
+// where does this get input?
 type CollectorConfiguration struct {
 	PostgresConnectionString string
+	HOST                     string
+	DATABASE                 string
+	USER                     string
+	PASSWORD                 string
 }
 
 const namespace = "patroni"

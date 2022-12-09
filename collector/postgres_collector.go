@@ -23,58 +23,55 @@ var (
 	possiblePatroniRole  = [...]string{"MASTER", "REPLICA", "STANDBY_LEADER"}
 )
 
-// anything need changed here re: connection string? 
 type postgresCollector struct {
-	stateDesc        *prometheus.Desc
-	roleDesc         *prometheus.Desc
-	staticDesc       *prometheus.Desc
+	vacuumDesc       *prometheus.Desc
+	activeDesc       *prometheus.Desc
+	connectDesc      *prometheus.Desc
+	baselineDesc     *prometheus.Desc
+	checkpointDesc   *prometheus.Desc
 	logger           log.Logger
 	client           client.PatroniClient
-	connectionString string
+	config           CollectorConfiguration
 }
 
-// these is creating the descriptions for the metrics? the return of `config.PostgresConnectionString`
 func createPostgresCollectorFactory(client client.PatroniClient, config CollectorConfiguration, logger log.Logger) prometheus.Collector {
-	stateDesc := prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "vacuum_count", "state"),
-		"The current vacuum count",
-		[]string{"state", "host"},
+	vacuumDesc := prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "cluster_node", "vacuum"),
+		"The current vacuum activity",
+		[]string{"cluster_name", "machine_name", "role"},
 		nil)
-	roleDesc := prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "cluster_node", "role"),
-		"The current PostgreSQL role of Patroni node",
-		[]string{"role", "scope"},
+	connectDesc := prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "cluster_node", "connect"),
+		"The current connection count",
+		[]string{"cluster_name", "machine_name", "role"},
 		nil)
-	staticDesc := prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "cluster_node", "static"),
-		"The collection of static value as reported by Patroni",
-		[]string{"version"},
+	baselineDesc := prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "cluster_node", "baseline"),
+		"The current baseline transaction rate",
+		[]string{"cluster_name", "machine_name", "role"},
+		nil)
+	checkpointDesc := prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "cluster_node", "checkpoint"),
+		"Checkpoint average for last hour",
+		[]string{"cluster_name", "machine_name", "role"},
 		nil)
 	return &patroniCollector{
-		stateDesc:        stateDesc,
-		roleDesc:         roleDesc,
-		staticDesc:       staticDesc,
+		vacuumDesc:       vacuumDesc,
+		connectDesc:      connectDesc,
+		baselineDesc:     baselineDesc,
+		checkpointDesc:   checkpointDesc,
 		logger:           logger,
 		client:           client,
-		connectionString: config.PostgresConnectionString,
+		config: 		  config,
 	}
 }
 
-	// how do I use?
 func (p *patroniCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- p.stateDesc
-	ch <- p.roleDesc
+	ch <- p.vacuumDesc
+	ch <- p.connectDesc
+	ch <- p.baselineDesc
+	ch <- p.checkpointDesc
 }
-
-// where should go this go, client?
-const (
-	// Initialize connectionString constants
-	HOST     = "test-host"
-	DATABASE = "test-db"
-	USER     = "test-user"
-	PASSWORD = "test-creds"
-)
-
 
 func CheckError(err error) {
 	if err != nil {
@@ -82,11 +79,9 @@ func CheckError(err error) {
 }
 
 func (p *patroniCollector) Collect(ch chan<- prometheus.Metric) {
-	// use psql library to run queries
-	// pump results to channel
 
 	// connection string
-	var connectionString string = fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=require", HOST, USER, PASSWORD, DATABASE)
+	var connectionString string = fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=require", p.config.HOST, p.config.USER, p.config.PASSWORD, p.config.DATABASE)
 
 	// connection attempt
 	db, err := sql.Open("postgres", connectionString)
@@ -97,12 +92,32 @@ func (p *patroniCollector) Collect(ch chan<- prometheus.Metric) {
 	CheckError(err)
 	fmt.Println("Successfully created connection to database")
 
-	// huge query for checkpointlength
-	checkpointLength := "SELECT total_checkpoints, seconds_since_start / total_checkpoints / 60 AS minutes_between_checkpoints FROM (SELECT EXTRACT(EPOCH FROM (now() - pg_postmaster_start_time())) AS seconds_since_start,(checkpoints_timed+checkpoints_req) AS total_checkpoints FROM pg_stat_bgwriter) AS sub; SELECT * FROM pg_control_checkpoint();"
-	rows, err := db.Query(sql_statement)
+	// vacuum activity
+	vacuum_act := "SELECT count(pid) FROM pg_stat_activity WHERE query LIKE 'autovacuum: %';"
+	rows, err := db.Query(vacuum_act)
 	checkError(err)
-	defer rows.Close()
-	}  //ch <- prometheus.MustNewConstMetric
+	ch <- prometheus.MustNewConstMetric(p.vacuumDesc, prometheus.CounterValue, prometheus.CounterValue, stateValue, possibleRole, patroniResponse.Patroni.Scope)
+	rows.Close()
+
+	// active connection count (need to redo query for groupby state)
+	connect_count := "SELECT count(*) FROM pg_stat_activity;"
+	rows, err := db.Query(connect_count)
+	checkError(err)
+	ch <- prometheus.MustNewConstMetric(p.connectDesc, prometheus.CounterValue, prometheus.CounterValue, stateValue, possibleRole, patroniResponse.Patroni.Scope)
+	rows.Close()
+
+	// baseline transaction rates
+	baseline_sum := "SELECT sum(xact_commit+xact_rollback) FROM pg_stat_database;"
+	rows, err := db.Query(baseline_sum)
+	checkError(err)
+	ch <- prometheus.MustNewConstMetric(p.baselineDesc, prometheus.CounterValue, prometheus.CounterValue, stateValue, possibleRole, patroniResponse.Patroni.Scope)
+	rows.Close()
+
+	// huge query for checkpointlength (checkpoints_last60min = total_checkpoints)avg this
+	checkpoint_length := "SELECT avg(checkpoints_timed+checkpoints_req) AS total_checkpoints FROM pg_stat_bgwriter WHERE time BETWEEN now() - '1 hour' AND now();"
+	rows, err := db.Query(checkpoint_length)
+	checkError(err)
+	ch <- prometheus.MustNewConstMetric(p.checkpointDesc, prometheus.CounterValue, prometheus.CounterValue, stateValue, possibleRole, patroniResponse.Patroni.Scope)
+	rows.Close()
+
 }
-
-
