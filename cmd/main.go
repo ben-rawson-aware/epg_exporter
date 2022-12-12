@@ -39,7 +39,7 @@ func main() {
 
 	httpClient := resty.New()
 	patroniClient := client.NewPatroniClient(httpClient, opts)
-	patroniCollector := collector.NewPatroniCollector(patroniClient, logger)
+	patroniCollector := collector.NewPatroniCollector(patroniClient, collector.CollectorConfiguration{}, logger)
 	prometheus.MustRegister(patroniCollector)
 	prometheus.MustRegister(version.NewCollector("patroni_exporter"))
 

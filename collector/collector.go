@@ -21,15 +21,16 @@ type CollectorConfiguration struct {
 	DATABASE                 string
 	USER                     string
 	PASSWORD                 string
+	CLUSTER                  string
 }
 
 const namespace = "patroni"
 
 var (
-	factories = make(map[string]func(client client.PatroniClient, CollectorConfiguration, logger log.Logger) prometheus.Collector)
+	factories = make(map[string]func(client.PatroniClient, CollectorConfiguration, log.Logger) prometheus.Collector)
 )
 
-func registerCollector(collector string, factory func(client client.PatroniClient, config CollectorConfiguration, logger log.Logger) prometheus.Collector) {
+func registerCollector(collector string, factory func(client.PatroniClient, CollectorConfiguration, log.Logger) prometheus.Collector) {
 	factories[collector] = factory
 }
 
