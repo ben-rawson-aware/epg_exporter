@@ -18,6 +18,7 @@ type initialCollector struct {
 type CollectorConfiguration struct {
 	PostgresConnectionString string
 	HOST                     string
+	PORT                     string
 	DATABASE                 string
 	USER                     string
 	PASSWORD                 string

@@ -24,7 +24,6 @@ func init() {
 
 type postgresCollector struct {
 	vacuumDesc     *prometheus.Desc
-	activeDesc     *prometheus.Desc
 	connectDesc    *prometheus.Desc
 	baselineDesc   *prometheus.Desc
 	checkpointDesc *prometheus.Desc
@@ -92,7 +91,7 @@ func (p *postgresCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	// connection string
-	var connectionString string = fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=require", p.config.HOST, p.config.USER, p.config.PASSWORD, p.config.DATABASE)
+	var connectionString string = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=require", p.config.HOST, p.config.PORT, p.config.USER, p.config.PASSWORD, p.config.DATABASE)
 
 	// connection attempt
 	db, err := sql.Open("postgres", connectionString)
@@ -127,7 +126,7 @@ func (p *postgresCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(p.baselineDesc, prometheus.CounterValue, sum, p.config.CLUSTER, name, patroniResponse.Role)
 
 	// huge query for checkpointlength (checkpoints_last60min = total_checkpoints)avg this
-	checkpoint_length := "SELECT avg(checkpoints_timed+checkpoints_req) AS total_checkpoints FROM pg_stat_bgwriter WHERE time BETWEEN now() - '1 hour' AND now();"
+	checkpoint_length := "SELECT avg(seconds_since_start / total_checkpoints / 60) AS checkpoint_length FROM (SELECT EXTRACT(EPOCH FROM (now() - pg_postmaster_start_time())) AS seconds_since_start, (checkpoints_timed+checkpoints_req) AS total_checkpoints FROM pg_stat_bgwriter) AS sub;"
 	row = db.QueryRow(checkpoint_length)
 	err = row.Scan(&sum)
 	CheckError(err)
