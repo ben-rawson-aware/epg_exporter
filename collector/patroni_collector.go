@@ -29,7 +29,7 @@ type patroniCollector struct {
 	client     client.PatroniClient
 }
 
-func createPatroniCollectorFactory(client client.PatroniClient, logger log.Logger) prometheus.Collector {
+func createPatroniCollectorFactory(client client.PatroniClient, _ CollectorConfiguration, logger log.Logger) prometheus.Collector {
 	stateDesc := prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "cluster_node", "state"),
 		"The current state of Patroni service",
