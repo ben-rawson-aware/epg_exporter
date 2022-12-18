@@ -1,7 +1,5 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/gopaytech/patroni_exporter)][goreportcard]
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)][license]
 
-[goreportcard]: https://goreportcard.com/report/github.com/thenakedzealot/epg_exporter
 [license]: https://opensource.org/licenses/Apache-2.0
 
 # EPG: "Everything PG" Exporter for Prometheus
@@ -20,10 +18,6 @@ Help on flags:
 ```bash
 epg_exporter --help
 ```
-
-For more information check the [source code documentation][gdocs].
-
-[gdocs]: http://godoc.org/github.com/gopaytech/patroni_exporter
 
 ## Usage
 

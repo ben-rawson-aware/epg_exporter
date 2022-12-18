@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 
-	"github.com/gopaytech/patroni_exporter/opts"
+	"github.com/TheNakedZealot/epg_exporter/opts"
 )
 
 type PatroniClient interface {

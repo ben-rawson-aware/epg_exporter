@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/go-kit/kit/log"
-	"github.com/gopaytech/patroni_exporter/client"
+	"github.com/TheNakedZealot/epg_exporter/client"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
