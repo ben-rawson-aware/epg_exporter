@@ -13,9 +13,9 @@ import (
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/gopaytech/patroni_exporter/client"
-	"github.com/gopaytech/patroni_exporter/collector"
-	options "github.com/gopaytech/patroni_exporter/opts"
+	"github.com/TheNakedZealot/epg_exporter/client"
+	"github.com/TheNakedZealot/epg_exporter/collector"
+	options "github.com/TheNakedZealot/epg_exporter/opts"
 )
 
 var (

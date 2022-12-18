@@ -7,7 +7,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 
-	"github.com/gopaytech/patroni_exporter/client"
+	"github.com/TheNakedZealot/epg_exporter/client"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

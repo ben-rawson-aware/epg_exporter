@@ -9,8 +9,8 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/gopaytech/patroni_exporter/client"
-	"github.com/gopaytech/patroni_exporter/opts"
+	"github.com/TheNakedZealot/epg_exporter/client"
+	"github.com/TheNakedZealot/epg_exporter/opts"
 )
 
 const PATRONI_HOST = "http://localhost"
