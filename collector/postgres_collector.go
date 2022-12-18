@@ -90,19 +90,15 @@ func (p *postgresCollector) Collect(ch chan<- prometheus.Metric) {
 		panic(err)
 	}
 
-	// connection string
 	var connectionString string = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=require", p.config.HOST, p.config.PORT, p.config.USER, p.config.PASSWORD, p.config.DATABASE)
 
-	// connection attempt
 	db, err := sql.Open("postgres", connectionString)
 	CheckError(err)
 
-	// success check with ping
 	err = db.Ping()
 	CheckError(err)
-	fmt.Println("Successfully created connection to database")
+	fmt.Println("Successful connection")
 
-	// vacuum activity
 	var count int
 	vacuum_act := "SELECT count(pid) FROM pg_stat_activity WHERE query LIKE 'autovacuum: %';"
 	row := db.QueryRow(vacuum_act)
@@ -110,14 +106,12 @@ func (p *postgresCollector) Collect(ch chan<- prometheus.Metric) {
 	CheckError(err)
 	ch <- prometheus.MustNewConstMetric(p.vacuumDesc, prometheus.CounterValue, float64(count), p.config.CLUSTER, name, patroniResponse.Role)
 
-	// active connection count grouped by state
 	connect_count := "SELECT count(*) FROM pg_stat_activity GROUP BY state;"
 	row = db.QueryRow(connect_count)
 	err = row.Scan(&count)
 	CheckError(err)
 	ch <- prometheus.MustNewConstMetric(p.connectDesc, prometheus.CounterValue, float64(count), p.config.CLUSTER, name, patroniResponse.Role)
 
-	// baseline transaction rates
 	var sum float64
 	baseline_sum := "SELECT sum(xact_commit+xact_rollback) FROM pg_stat_database;"
 	row = db.QueryRow(baseline_sum)
@@ -125,7 +119,6 @@ func (p *postgresCollector) Collect(ch chan<- prometheus.Metric) {
 	CheckError(err)
 	ch <- prometheus.MustNewConstMetric(p.baselineDesc, prometheus.CounterValue, sum, p.config.CLUSTER, name, patroniResponse.Role)
 
-	// huge query for checkpointlength (checkpoints_last60min = total_checkpoints)avg this
 	checkpoint_length := "SELECT avg(seconds_since_start / total_checkpoints / 60) AS checkpoint_length FROM (SELECT EXTRACT(EPOCH FROM (now() - pg_postmaster_start_time())) AS seconds_since_start, (checkpoints_timed+checkpoints_req) AS total_checkpoints FROM pg_stat_bgwriter) AS sub;"
 	row = db.QueryRow(checkpoint_length)
 	err = row.Scan(&sum)
