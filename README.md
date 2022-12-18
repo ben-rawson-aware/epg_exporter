@@ -1,4 +1,4 @@
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)][license]
+[![Go Report Card](https://goreportcard.com/badge/github.com/TheNakedZealot/epg_exporter)](https://goreportcard.com/report/github.com/TheNakedZealot/epg_exporter)[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)][license]
 
 [license]: https://opensource.org/licenses/Apache-2.0
 
