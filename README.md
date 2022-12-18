@@ -1,26 +1,24 @@
-[![CI](https://github.com/gopaytech/patroni_exporter/workflows/Main%20Deployment/badge.svg)][ci]
 [![Go Report Card](https://goreportcard.com/badge/github.com/gopaytech/patroni_exporter)][goreportcard]
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)][license]
 
-[ci]: https://github.com/gopaytech/patroni_exporter/actions?query=workflow%3A%22Master+Deployment%22+branch%3Amaster
-[goreportcard]: https://goreportcard.com/report/github.com/gopaytech/patroni_exporter
+[goreportcard]: https://goreportcard.com/report/github.com/thenakedzealot/epg_exporter
 [license]: https://opensource.org/licenses/Apache-2.0
 
-# Patroni Exporter for Prometheus
-Simple server that scrapes Patroni stats and exports them via HTTP for Prometheus consumption.
+# EPG: "Everything PG" Exporter for Prometheus
+Scrapes standard Patroni stats and executes custom Postgresql queries deemed essential to monitoring by Aware SRE for active Patroni clusters. Exports metrics via HTTP for Prometheus consumption on port 9933.
 
 ## Getting Started
 
 To run it:
 
 ```bash
-./patroni_exporter [flags]
+epg_exporter [flags]
 ```
 
 Help on flags:
 
 ```bash
-./patroni_exporter --help
+epg_exporter --help
 ```
 
 For more information check the [source code documentation][gdocs].
@@ -29,11 +27,20 @@ For more information check the [source code documentation][gdocs].
 
 ## Usage
 
---patroni.host="http://localhost"
-Specify Patroni API URL using the `--patroni.host` flag.
-Specify Patroni API port using the `--patroni.port` flag.
+> Important: Host addresses for both Patroni and Postgres must be supplied for a successful response.
+
+- Specify Patroni API URL using the `--patroni.host` flag.
+- Specify Patroni API port using the `--patroni.port` flag.
+- Specify Postgres host using the `--postgres.host` flag.
+- Specify Postgres user using the `--postgres.user` flag.
+- Specify Postgres password using the `--postgres.password` flag.
+- Specify Postgres post using the `--postgres.port` flag.
+- Specify Postgres database using the `--postgres.database` flag.
+
 ```bash
-./patroni_exporter --patroni.host="http://localhost" --patroni.port=8008
+epg_exporter --patroni.host="http://localhost" \
+--postgres.host="localhost" --postgres.database="example" \
+--postgres.user="superuser" --postgres.password="supersecret" 
 ```
 
 ### Building
