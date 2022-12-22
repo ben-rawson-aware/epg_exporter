@@ -28,7 +28,7 @@ epg_exporter --help
 - Specify Postgres host using the `--postgres.host` flag.
 - Specify Postgres user using the `--postgres.user` flag.
 - Specify Postgres password using the `--postgres.password` flag.
-- Specify Postgres post using the `--postgres.port` flag.
+- Specify Postgres port using the `--postgres.port` flag.
 - Specify Postgres database using the `--postgres.database` flag.
 
 ```bash
